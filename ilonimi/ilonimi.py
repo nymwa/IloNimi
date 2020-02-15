@@ -20,15 +20,28 @@ class IloNimi:
 			cls.proper_pattern = re.compile(r'^([AIUEO]|[KSNPML][aiueo]|[TJ][aueo]|W[aie])n?(([ksnpml]?[aiueo]|[tj][aueo]|w[aie])n?)*$')
 		return cls.instance
 
+	def convert_unk(self, x):
+		x = [w if w in self.vocab_set or self.is_proper(w) or w.isdecimal() else '[UNK]' for w in x]
+		return x
+
 	def is_proper(self, x):
 		return self.proper_pattern.match(x)
+
+	def split_proper(self, x):
+		re_syll = re.compile(r'[ksnpmltjw][aiueo]n?')
+		lst, sub = [], ''
+		for i in range(len(x))[::-1]:
+			sub, x = x[-1] + sub, x[:-1]
+			if re_syll.match(sub):
+				lst, sub = [sub] + lst, ''
+		return lst if sub == '' else [sub] + lst
 
 	def split_punct(self, x):
 		x = self.left_punct_pattern.sub(' \\1', x)
 		x = self.right_punct_pattern.sub('\\1 ', x)
 		return x
 
-	def tag(self, x):
+	def category(self, x):
 		if x in self.tag_list:
 			return 'tag'
 		elif x in self.punct_list:
@@ -42,17 +55,26 @@ class IloNimi:
 		else:
 			return 'unk'
 
+	def show(self, x):
+		lst = self.__call__(x)
+		print('S {}'.format(' '.join([dct['token'] for dct in lst])))
+		for dct in lst:
+			out = 'W {}\t{}'.format(dct['token'], dct['category'])
+			if dct['category'] == 'proper':
+				out += '\t' + '.'.join(dct['syllables'])
+			print(out)
+		print('EOS\n')
+
 	def __call__(self, x):
 		x = x.strip()
 		x = self.split_punct(x)
 		x = self.space_pattern.sub(x, ' ')
 		x = x.split(' ')
-		print('S {}'.format(' '.join(x)))
+		lst = []
 		for w in x:
-			print('W {}\t{}'.format(w, self.tag(w)))
-		print('EOS\n')
-
-	def convert_unk(self, x):
-		x = [w if w in self.vocab_set or self.is_proper(w) or w.isdecimal() else '[UNK]' for w in x]
-		return x
+			dct = {'token':w, 'category':self.category(w)}
+			if dct['category'] == 'proper':
+				dct['syllables'] = self.split_proper(w)
+			lst.append(dct)
+		return lst
 
