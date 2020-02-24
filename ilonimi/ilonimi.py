@@ -15,7 +15,7 @@ class IloNimi:
 			cls.digits = list('0123456789')
 			cls.word_list = 'a akesi ala alasa ale ali anpa ante anu apeja awen e en esun ijo ike ilo insa jaki jan jelo jo kala kalama kama kan kasi ken kepeken kijetesantakalu kili kin kipisi kiwen ko kon kule kulupu kute la lape laso lawa leko len lete li lili linja lipu loje lon luka lukin lupa ma majuna mama mani meli mi mije moku moli monsi monsuta mu mun musi mute namako nanpa nasa nasin nena ni nimi noka o oko olin ona open pakala pake pali palisa pan pana pata pi pilin pimeja pini pipi poka poki pona pu sama seli selo seme sewi sijelo sike sin sina sinpin sitelen sona soweli suli suno supa suwi tan taso tawa telo tenpo toki tomo tu unpa uta utala walo wan waso wawa weka wile'.split(' ')
 			cls.syll_list = [c + v for c in ['', 'K', 'L', 'M', 'N', 'P', 'S', 'T', 'W', 'J'] for v in ['A', 'E', 'I', 'O', 'U']]
-			for syll in ['TI', 'WO', 'WU', 'JU']:
+			for syll in ['TI', 'WO', 'WU', 'JI']:
 				cls.syll_list.remove(syll)
 			cls.syll_list = cls.syll_list + [syll + 'N' for syll in cls.syll_list]
 			# vocabulary
@@ -25,7 +25,7 @@ class IloNimi:
 			cls.left_punct_pattern  = re.compile(r'(?<=[^\s])([{}])'.format(punctuations, punctuations))
 			cls.right_punct_pattern = re.compile(r'([{}])(?=[^\s])'.format(punctuations, punctuations))
 			cls.space_pattern = re.compile(r'\s+')
-			cls.proper_pattern = re.compile(r'^([AIUEO]|[KSNPML][aiueo]|[TJ][aueo]|W[aie])n?(([ksnpml]?[aiueo]|[tj][aueo]|w[aie])n?)*$')
+			cls.proper_pattern = re.compile(r'^([AIUEO]|[KSNPML][aiueo]|[TJ][aueo]|W[aie])n?(([ksnpml][aiueo]|[tj][aueo]|w[aie])n?)*$')
 		return cls.instance
 
 	def preprocess(self, x):
@@ -71,10 +71,6 @@ class IloNimi:
 		else:
 			return 'unk'
 
-	def bert_vocab(self):
-		vocab = self.tag_list + self.punct_list + self.digits + self.word_list + self.syll_list
-		return vocab
-
 	def show(self, x, spell_check=True):
 		lst = self.__call__(x, spell_check)
 		print('S {}'.format(' '.join([dct['token'] for dct in lst])))
@@ -84,18 +80,6 @@ class IloNimi:
 				out += '\t' + '.'.join(dct['syllables'])
 			print(out)
 		print('EOS\n')
-
-	def show_bert(self, x, rm_unk=False, spell_check=True):
-		lst = self.__call__(x, spell_check)
-		tmp = []
-		for dct in lst:
-			if dct['category'] == 'proper':
-				tmp += [x.upper() for x in self.split_proper(dct['syllables'])]
-			elif dct['category'] == 'number':
-				tmp += [x for x in list(dct['token'])]
-			else:
-				tmp.append(dct['token'])
-		print(' '.join(tmp))
 
 	def __call__(self, x, spell_check):
 		x = x.strip()
@@ -112,4 +96,32 @@ class IloNimi:
 				dct['syllables'] = self.split_proper(w)
 			lst.append(dct)
 		return lst
+
+
+class IloNimiBERT(IloNimi):
+	def __init__(self):
+		super().__init__()
+		self.bert_vocab = self.tag_list + self.punct_list + self.digits + self.word_list + self.syll_list
+
+	def encode(self, x, rm_unk=False, spell_check=True):
+		lst = self.__call__(x, spell_check)
+		tmp = ['[CLS]']
+		for dct in lst:
+			if dct['category'] == 'proper':
+				tmp += [x.upper() for x in self.split_proper(dct['syllables'])]
+			elif dct['category'] == 'number':
+				tmp += [x for x in list(dct['token'])]
+			elif dct['category'] == 'unk':
+				tmp.append('[UNK]')
+			else:
+				tmp.append(dct['token'])
+		tmp.append('[SEP]')
+		return tmp
+
+	def decode(self, x):
+		x = [self.bert_vocab[n] for n in x[1:-1]]
+		for i in range(len(x))[::-1]:
+			if x[i].isupper():
+				x[i] = '@@' + x[i].lower() if i > 0 and x[i-1].isupper() else x[i].capitalize()
+		return ' '.join(x).replace(' @@', '')
 

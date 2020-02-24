@@ -1,5 +1,5 @@
 import sys
-from ilonimi import IloNimi
+from ilonimi import IloNimi, IloNimiBERT
 import argparse
 
 if __name__ == '__main__':
@@ -8,9 +8,16 @@ if __name__ == '__main__':
 	parser.add_argument('--vocab', action='store_true')
 	args = parser.parse_args()
 
-	tokenizer = IloNimi()
 	if args.vocab:
-		for token in tokenizer.bert_vocab():
+		tokenizer = IloNimiBERT()
+	else:
+		if args.mode == 'default':
+			tokenizer = IloNimi()
+		elif args.mode == 'bert':
+			tokenizer = IloNimiBERT()
+
+	if args.vocab:
+		for token in tokenizer.bert_vocab:
 			print(token)
 	else:
 		if args.mode == 'default':
@@ -18,5 +25,5 @@ if __name__ == '__main__':
 				tokenizer.show(line)
 		elif args.mode == 'bert':
 			for line in sys.stdin:
-				tokenizer.show_bert(line)
+				print(' '.join(tokenizer.encode(line)))
 
