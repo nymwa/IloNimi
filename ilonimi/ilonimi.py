@@ -13,7 +13,7 @@ class IloNimi:
 			cls.tag_list = '[PAD] [UNK] [CLS] [SEP] [MASK]'.split(' ')
 			cls.punct_list = list(string.punctuation)
 			cls.digits = list('0123456789')
-			cls.word_list = 'a akesi ala alasa ale ali anpa ante anu apeja awen e en esun ijo ike ilo insa jaki jan jelo jo kala kalama kama kan kasi ken kepeken kijetesantakalu kili kin kipisi kiwen ko kon kule kulupu kute la lape laso lawa leko len lete li lili linja lipu loje lon luka lukin lupa ma majuna mama mani meli mi mije moku moli monsi monsuta mu mun musi mute namako nanpa nasa nasin nena ni nimi noka o oko olin ona open pakala pake pali palisa pan pana pata pi pilin pimeja pini pipi poka poki pona pu sama seli selo seme sewi sijelo sike sin sina sinpin sitelen sona soweli suli suno supa suwi tan taso tawa telo tenpo toki tomo tu unpa uta utala walo wan waso wawa weka wile'.split(' ')
+			cls.word_list = 'a akesi ala alasa ale ali anpa ante anu apeja awen e en esun ijo ike iki ilo insa jaki jan jelo jo kala kalama kama kan kapa kapesi kasi ken kepeken kijetesantakalu kili kin kipisi kiwen ko kon kule kulupu kute la lape laso lawa leko len lete li lili linja lipu loje lon luka lukin lupa ma majuna mama mani meli mi mije moku moli monsi monsuta mu mulapisu mun musi mute namako nanpa nasa nasin nena ni nimi noka o oko olin ona open pakala pake pali palisa pan pana pasila pata pi pilin pimeja pini pipi po poka poki pona powe pu sama seli selo seme sewi sijelo sike sin sina sinpin sitelen sona soweli suli suno supa suwi tan taso tawa telo tenpo toki tomo tu tuli unpa uta utala walo wan waso wawa weka wile yupekosi'.split(' ')
 			cls.syll_list = [c + v for c in ['', 'K', 'L', 'M', 'N', 'P', 'S', 'T', 'W', 'J'] for v in ['A', 'E', 'I', 'O', 'U']]
 			for syll in ['TI', 'WO', 'WU', 'JI']:
 				cls.syll_list.remove(syll)
@@ -123,5 +123,8 @@ class IloNimiBERT(IloNimi):
 		for i in range(len(x))[::-1]:
 			if x[i].isupper():
 				x[i] = '@@' + x[i].lower() if i > 0 and x[i-1].isupper() else x[i].capitalize()
-		return ' '.join(x).replace(' @@', '')
+		x = ' '.join(x)
+		x = x.replace(' @@', '')
+		x = re.sub(r'(\w) (\W)', r'\1\2', x)
+		return x
 
