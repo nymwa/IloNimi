@@ -14,10 +14,15 @@ class IloNimi:
 			cls.punct_list = list(string.punctuation)
 			cls.digits = list('0123456789')
 			cls.word_list = 'a akesi ala alasa ale ali anpa ante anu apeja awen e en esun ijo ike iki ilo insa jaki jan jelo jo kala kalama kama kan kapa kapesi kasi ken kepeken kijetesantakalu kili kin kipisi kiwen ko kon kule kulupu kute la lape laso lawa leko len lete li lili linja lipu loje lon luka lukin lupa ma majuna mama mani meli mi mije moku moli monsi monsuta mu mulapisu mun musi mute namako nanpa nasa nasin nena ni nimi noka o oko olin ona open pakala pake pali palisa pan pana pasila pata pi pilin pimeja pini pipi po poka poki pona powe pu sama seli selo seme sewi sijelo sike sin sina sinpin sitelen sona soweli suli suno supa suwi tan taso tawa telo tenpo toki tomo tu tuli unpa uta utala walo wan waso wawa weka wile yupekosi'.split(' ')
-			cls.syll_list = [c + v for c in ['', 'K', 'L', 'M', 'N', 'P', 'S', 'T', 'W', 'J'] for v in ['A', 'E', 'I', 'O', 'U']]
-			for syll in ['TI', 'WO', 'WU', 'JI']:
-				cls.syll_list.remove(syll)
-			cls.syll_list = cls.syll_list + [syll + 'N' for syll in cls.syll_list]
+			vowel = ['A', 'E', 'I', 'O', 'U']
+			consonant = ['K', 'L', 'M', 'N', 'P', 'S', 'T', 'W', 'J']
+			cls.syll_list = vowel.copy()
+			for c in consonant:
+				for v in vowel:
+					if c + v not in ['TI', 'WO', 'WU', 'JI']:
+						cls.syll_list.append(c + v)
+						cls.syll_list.append('@@' + c + v)
+			cls.syll_list.append('@@N')
 			# vocabulary
 			cls.vocab_list = cls.tag_list + cls.punct_list + cls.word_list
 			cls.vocab_set = set(cls.vocab_list)
@@ -43,7 +48,7 @@ class IloNimi:
 	def is_proper(self, x):
 		return self.proper_pattern.match(x)
 
-	def split_proper(self, x):
+	def split_syllables(self, x):
 		re_syll = re.compile(r'[ksnpmltjw][aiueo]n?')
 		lst, sub = [], ''
 		for i in range(len(x))[::-1]:
@@ -76,8 +81,6 @@ class IloNimi:
 		print('S {}'.format(' '.join([dct['token'] for dct in lst])))
 		for dct in lst:
 			out = 'W {}\t{}'.format(dct['token'], dct['category'])
-			if dct['category'] == 'proper':
-				out += '\t' + '.'.join(dct['syllables'])
 			print(out)
 		print('EOS\n')
 
@@ -92,8 +95,6 @@ class IloNimi:
 			if spell_check:
 				w = self.spell_correction(w)
 			dct = {'token':w, 'category':self.category(w)}
-			if dct['category'] == 'proper':
-				dct['syllables'] = self.split_proper(w)
 			lst.append(dct)
 		return lst
 
@@ -103,12 +104,25 @@ class IloNimiBERT(IloNimi):
 		super().__init__()
 		self.bert_vocab = self.tag_list + self.punct_list + self.digits + self.word_list + self.syll_list
 
+	def split_proper_for_bert(self, x):
+		re_cv = re.compile(r'[ksnpmltjw][aiueo]')
+		lst, sub = [], ''
+		for i in range(len(x))[::-1]:
+			sub = x[-1] + sub
+			x = x[:-1]
+			if sub == 'n' or re_cv.match(sub):
+				lst = ['@@' + sub.upper()] + lst
+				sub = ''
+		if sub != '':
+			lst = [sub.upper()] + lst
+		return lst
+
 	def encode(self, x, rm_unk=False, spell_check=True):
 		lst = self.__call__(x, spell_check)
 		tmp = ['[CLS]']
 		for dct in lst:
 			if dct['category'] == 'proper':
-				tmp += [x.upper() for x in self.split_proper(dct['syllables'])]
+				tmp += [x.upper() for x in self.split_proper_for_bert(dct['token'])]
 			elif dct['category'] == 'number':
 				tmp += [x for x in list(dct['token'])]
 			elif dct['category'] == 'unk':
@@ -118,13 +132,15 @@ class IloNimiBERT(IloNimi):
 		tmp.append('[SEP]')
 		return tmp
 
-	def decode(self, x):
+	def decode(self, x, tag_word='≡╹ω╹≡'):
 		x = [self.bert_vocab[n] for n in x[1:-1]]
-		for i in range(len(x))[::-1]:
+		x = [(tag_word if (w in self.tag_list) else w) for w in x]
+		# for proper noun
+		for i in range(len(x)):
 			if x[i].isupper():
-				x[i] = '@@' + x[i].lower() if i > 0 and x[i-1].isupper() else x[i].capitalize()
+				x[i] = x[i].lower() if x[i].startswith('@@') else x[i].capitalize()
 		x = ' '.join(x)
 		x = x.replace(' @@', '')
-		x = re.sub(r'(\w) (\W)', r'\1\2', x)
+		x = re.sub(r'(\w) ([^\w≡])', r'\1\2', x)
 		return x
 
