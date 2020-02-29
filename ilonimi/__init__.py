@@ -1,1 +1,1 @@
-from .ilonimi import IloNimi, IloNimiBERT
+from .ilonimi import IloNimi

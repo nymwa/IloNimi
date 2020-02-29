@@ -1,29 +1,23 @@
 import sys
-from ilonimi import IloNimi, IloNimiBERT
+from ilonimi import IloNimi
 import argparse
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--mode', default='default')
-	parser.add_argument('--vocab', action='store_true')
+	parser.add_argument('--mode', default='tokenize')
 	args = parser.parse_args()
+	tokenizer = IloNimi()
 
-	if args.vocab:
-		tokenizer = IloNimiBERT()
-	else:
-		if args.mode == 'default':
-			tokenizer = IloNimi()
-		elif args.mode == 'bert':
-			tokenizer = IloNimiBERT()
-
-	if args.vocab:
-		for token in tokenizer.bert_vocab:
+	if args.mode == 'tokenize':
+		for line in sys.stdin:
+			print(' '.join(tokenizer.bert_tokenize(line)))
+	elif args.mode == 'encode':
+		for line in sys.stdin:
+			print(' '.join([str(x) for x in tokenizer.encode(line)]))
+	elif args.mode == 'decode':
+		for line in sys.stdin:
+			print(tokenizer.decode([int(x) for x in line.strip().split(' ')]))
+	elif args.mode == 'vocab':
+		for token in tokenizer.vocab:
 			print(token)
-	else:
-		if args.mode == 'default':
-			for line in sys.stdin:
-				tokenizer.show(line)
-		elif args.mode == 'bert':
-			for line in sys.stdin:
-				print(' '.join(tokenizer.encode(line)))
 
