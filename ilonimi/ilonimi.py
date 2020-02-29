@@ -8,12 +8,13 @@ from collections import Counter
 class SpellChecker:
 	def __init__(self):
 		with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'correction.tsv')) as f:
-			self.lst = [line.split('\t') for line in f.read().splitlines()]
+			lst = [line.split('\t') for line in f.read().splitlines()]
+		self.dct = {e:c for e, c in lst}
 
-	def __call__(self, line):
-		for e, c in self.lst: 
-			line = line.replace(e, c)
-		return line
+	def __call__(self, x):
+		if x in self.dct:
+			x = self.dct[x]
+		return x
 
 
 class Normalizer:
@@ -97,10 +98,10 @@ class IloNimi:
 
 	def tokenize(self, x):
 		x = self.normalizer(x)
-		x = self.spell_checker(x)
 		x = x.split(' ')
 		lst = []
 		for t in x:
+			t = self.spell_checker(t)
 			if self.proper_splitter.check(t):
 				lst += self.proper_splitter(t)
 			elif t.isdecimal():
