@@ -7,6 +7,7 @@ setuptools.setup(
     author_email="nymwa0@gmail.com",
     description="Toki Pona Tokenizer",
     packages=setuptools.find_packages(),
+    package_data={'ilonimi':['correction.tsv', 'wordlist.txt']},
     classifiers=[
         "Programming Language :: Python :: 3.7",
     ]
