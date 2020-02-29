@@ -1,3 +1,4 @@
+import os
 import sys
 import re
 import numpy as np
@@ -6,7 +7,7 @@ from collections import Counter
 
 class SpellChecker:
 	def __init__(self):
-		with open('correction.tsv') as f:
+		with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'correction.tsv')) as f:
 			self.lst = [line.split('\t') for line in f.read().splitlines()]
 
 	def __call__(self, line):
@@ -88,7 +89,7 @@ class IloNimi:
 		self.vocab += self.number_splitter.gen_digits()
 
 		# words
-		with open('wordlist.txt') as f:
+		with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'wordlist.txt')) as f:
 			self.vocab += f.read().splitlines()
 
 		# proper nouns
