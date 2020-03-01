@@ -111,7 +111,9 @@ class IloNimi:
 		return lst
 
 	def bert_tokenize(self, x):
-		return ['[CLS]'] + self.tokenize(x) + ['[SEP]']
+		x = self.tokenize(x)
+		x = [t if t in self.vocab_dict else '[UNK]' for t in x]
+		return ['[CLS]'] + x + ['[SEP]']
 
 	def encode(self, x):
 		x = self.tokenize(x)
