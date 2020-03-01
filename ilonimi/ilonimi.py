@@ -115,10 +115,18 @@ class IloNimi:
 		x = [t if t in self.vocab_dict else '[UNK]' for t in x]
 		return ['[CLS]'] + x + ['[SEP]']
 
+	def bert_detokenize(self, x):
+		x = x.strip()
+		x = re.sub(r'(?<=[A-Z]) ▁(?=[A-Z]+)', '', x)
+		x = re.sub(r'(?<=\d)▁ (?=\d)', '', x)
+		x = re.sub(r'▁', '', x)
+		x = re.sub(r'[A-Z]+', lambda x: x.group().capitalize(), x)
+		x = re.sub(r' ([!,.:;?~])', r'\1', x)
+		x = re.sub(r'([#]) ', r'\1', x)
+		return x
+
 	def encode(self, x):
-		x = self.tokenize(x)
-		x = ['[CLS]'] + x + ['[SEP]']
-		return [self.vocab_dict[t if t in self.vocab_dict else '[UNK]'] for t in x]
+		return [self.vocab_dict[t] for t in self.bert_tokenize(x)]
 
 	def decode(self, x, unk='≡╹ω╹≡'):
 		x = [self.vocab[t] for t in x]
@@ -128,9 +136,6 @@ class IloNimi:
 			x = x[:-1]
 		x = [unk if t in self.special_tokens else t for t in x]
 		x = ' '.join(x)
-		x = re.sub(r'(?<=[A-Z]) ▁(?=[A-Z]+)', '', x)
-		x = re.sub(r'(?<=\d)▁ (?=\d)', '', x)
-		x = re.sub(r'▁', '', x)
-		x = re.sub(r'[A-Z]+', lambda x: x.group().capitalize(), x)
+		x = self.bert_detokenize(x)
 		return x
 

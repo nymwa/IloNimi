@@ -3,5 +3,8 @@
 ```
 cd ilonimi
 pip install . 
-cat (corpus) | python -m ilonimi
+cat (corpus) | ennimi
+cat (corpus) | ennimi | denimi
+nimiale
+nimiali
 ```
