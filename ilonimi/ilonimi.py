@@ -43,7 +43,7 @@ class ProperSplitter:
 	def gen_syllables(self):
 		vowels = ['A', 'E', 'I', 'O', 'U']
 		consonants = ['K', 'L', 'M', 'N', 'P', 'S', 'T', 'W', 'J']
-		return vowels + [t for c in consonants for v in vowels for t in [c+v, '▁'+c+v] if c+v not in ['TI', 'WO', 'WU', 'JI']] + ['▁N']
+		return vowels + [t for c in consonants for v in vowels for t in [c+v, '##'+c+v] if c+v not in ['TI', 'WO', 'WU', 'JI']] + ['##N']
 
 	def check(self, x):
 		return self.proper.match(x)
@@ -51,22 +51,22 @@ class ProperSplitter:
 	def __call__(self, x):
 		assert self.check(x)
 		if x[-1] == 'n':
-			return self.__call__(x[:-1]) + ['▁N']
+			return self.__call__(x[:-1]) + ['##N']
 		elif re.search('[ksnpmltjw][aiueo]$', x):
-			return self.__call__(x[:-2]) + ['▁' + x[-2:].upper()]
+			return self.__call__(x[:-2]) + ['##' + x[-2:].upper()]
 		else:
 			return [x.upper()]
 
 
 class NumberSplitter:
 	def gen_digits(self):
-		return [t for n in range(10) for t in [str(n), str(n)+'▁']]
+		return [t for n in range(10) for t in [str(n), str(n)+'##']]
 	
 	def __call__(self, x):
 		assert x.isdecimal()
 		x = str(int(x))
 		head, last = x[:-1], x[-1]
-		return [n+'▁' for n in head] + [last]
+		return [n+'##' for n in head] + [last]
 
 
 class IloNimi:
@@ -117,9 +117,9 @@ class IloNimi:
 
 	def bert_detokenize(self, x):
 		x = x.strip()
-		x = re.sub(r'(?<=[A-Z]) ▁(?=[A-Z]+)', '', x)
+		x = re.sub(r'(?<=[A-Z]) ##(?=[A-Z]+)', '', x)
 		x = re.sub(r'(?<=\d)▁ (?=\d)', '', x)
-		x = re.sub(r'▁', '', x)
+		x = re.sub(r'##', '', x)
 		x = re.sub(r'[A-Z]+', lambda x: x.group().capitalize(), x)
 		x = re.sub(r' ([!,.:;?~])', r'\1', x)
 		x = re.sub(r'([#]) ', r'\1', x)
