@@ -70,17 +70,21 @@ class NumberSplitter:
 
 
 class IloNimi:
-	def __init__(self):
+	def __init__(self, bos=False, mask=False):
 		self.spell_checker = SpellChecker()
 		self.normalizer = Normalizer()
 		self.number_splitter = NumberSplitter()
 		self.proper_splitter = ProperSplitter()
-		self.prepare_vocab()
+		self.prepare_vocab(bos, mask)
 		self.vocab_dict = {x:i for i, x in enumerate(self.vocab)}
 
-	def prepare_vocab(self): 
+	def prepare_vocab(self, bos, mask): 
 		# special tokens
-		self.special_tokens = ['[PAD]', '[UNK]', '[CLS]', '[SEP]', '[MASK]']
+		self.special_tokens = ['[EOS]', '[UNK]']
+		if bos:
+			self.special_tokens.append('[BOS]')
+		if mask:
+			self.special_tokens.append('[MASK]')
 		self.vocab = self.special_tokens.copy()
 
 		# punctuations
@@ -113,7 +117,7 @@ class IloNimi:
 	def bert_tokenize(self, x):
 		x = self.tokenize(x)
 		x = [t if t in self.vocab_dict else '[UNK]' for t in x]
-		return ['[CLS]'] + x + ['[SEP]']
+		return x
 
 	def bert_detokenize(self, x):
 		x = x.strip()
@@ -130,9 +134,9 @@ class IloNimi:
 
 	def decode(self, x, unk='≡╹ω╹≡'):
 		x = [self.vocab[t] for t in x]
-		if x[0] == '[CLS]':
+		if re.match(r'^\[.*\]$', x[0]):
 			x = x[1:]
-		if x[-1] == '[SEP]':
+		if re.match(r'^\[.*\]$', x[-1]):
 			x = x[:-1]
 		x = [unk if t in self.special_tokens else t for t in x]
 		x = ' '.join(x)
